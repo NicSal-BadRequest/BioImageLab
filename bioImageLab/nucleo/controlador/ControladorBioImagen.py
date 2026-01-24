@@ -51,12 +51,11 @@ class T_Norm_PorCorte:
 
 class ControladorBioImagen:
     """
-    Clase "Handler" para leer y procesar imagenes de microscopía en formato .png, .jpg, .tiff y formatos de bioimagen confocal como .ics/.ids.
+    Clase "Handler" para leer y preprocesar imagenes de microscopía en formato .png, .jpg, .tiff y formatos de bioimagen confocal como .ics/.ids.
     Permite :
-      - Leer y abrir este tipo de archivos
-      - Procesarlos a escala de grises y transformarlos en un MultiArray para "handlear" los diferentes tipos de canales, "z-stacking" y "time-lapse" según el tipo de imagen.
-      - Binarizar la imagen y segmentar objetos.
-      - Detectar y extraer características de objetos : Centroides y posiciones en la imagen de los mismos.
+      - Leer y abrir este tipo de archivos.
+      - Preprocesarlos a escala de grises y transformarlos en un MultiArray para "handlear" los diferentes tipos de canales, "z-stacking" y "time-lapse" según el tipo de imagen.
+      - Normalizacion
     Nota :
       - El MultiArray es [T, Z, C, Y, X] donde T es el "timelapse", Z el "Z-stacking" (diferentes planos en el eje Z), C es el Canal de fluorescencia ("Azul", "Rojo", "Verde" y "Campo" que puede
       ser claro u oscuro), y los ejes de pixeles X e Y son las dimensiones de la imagen.
