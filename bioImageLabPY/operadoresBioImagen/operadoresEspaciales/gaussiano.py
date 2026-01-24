@@ -1,7 +1,16 @@
-# Gaussiana
+import cv2
+import numpy as np
+
+# Filtro gaussiano
 
 class Gaussiano:
   nombre = "gaussiano"
+
+  """
+    Funcion atomica de filtrado gaussiano que permite un suavizado espacial general de los pixeles,
+    eliminando ruido electronico de fondo. 
+    Problema : Produce difuminado de los bordes, como bordes de celulas o estructuras.
+  """
 
   def __init__(self, 
                sigma: float,
