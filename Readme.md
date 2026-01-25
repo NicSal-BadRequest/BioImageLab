@@ -56,17 +56,15 @@ pip3 install -r requirements.txt
 ## Estructura del proyecto:
 
 ```bash
-BioImageLab/
+nucleo/
 │
-├── /
-│   └── controladorBioImagen/
-│       └── ControladorBioImagen.py # Lectura , preprocesamiento, metadatos y normalizacion
+├── controlador/
+│   └── ControladorBioImagen.py # I/O, metadatos, e iteracion
 │
-├── 1_preprocesamiento/
-│   ├── normalizacion/
-│   │   ├── min_max.py
-│   │   ├── zscore.py
-│   │   └── percentil.py
+├── preprocesador/
+│   ├── normalizador/
+│   │   ├── normalizador.py
+│   │   └── metodosNormalizacion.py
 │   │
 │   ├── correccion_iluminacion/
 │   │   ├── flat_field.py
@@ -82,10 +80,11 @@ BioImageLab/
 │       ├── hot_pixels.py
 │       └── bleaching.py
 │
-├── filtradorBioImagen/
+├── filtradores/
 │   ├── operadores_locales/                 # dominio espacial
 │   │   ├── gaussiano.py
 │   │   ├── mediana.py
+│   │   ├── cajaBlur.py
 │   │   └── bilateral.py
 │   │
 │   ├── operadores_espectrales/              # dominio frecuencial
