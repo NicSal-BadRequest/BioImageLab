@@ -13,19 +13,23 @@ from typing import Union, List, Optional
 
 @dataclass(frozen=True) 
 class Norm_Global:
-    """Normaliza todas las imágenes de un canal por el máximo encontrado en todo el canal."""
+    """
+        Normaliza todas las imágenes de un canal por el máximo encontrado en todo el canal.
+    """
     pass
 
 @dataclass(frozen=True)
 class Z_Norm_PorCorte:
-    """Normaliza cada corte Z según su propio máximo interno en dicho corte."""
+    """
+        Normaliza cada corte Z según su propio máximo interno en dicho corte.
+    """
     pass
 
 @dataclass(frozen=True)
 class T_Norm_PorCorte:
     """
-    Normaliza cada fotograma según su propio máximo en dicho fotograma.
-    El máximo de un fotograma afecta a todos los cortes Z.
+        Normaliza cada fotograma según su propio máximo en dicho fotograma.
+        El máximo de un fotograma afecta a todos los cortes Z.
     """
     pass
 
@@ -34,16 +38,16 @@ TipoNormalizacion = Union[Norm_Global, Z_Norm_PorCorte, T_Norm_PorCorte]
 
 class Normalizador:
     """
-    Clase para gestionar los diferentes tipos de normalización en imágenes confocales y aplicar 
-    diferentes métodos de normalización.
-    
-    Nota: 
-        - img_normalizada[i] corresponde al canal i original, con forma (T, Z, 1, Y, X). 
-        - Los canales no procesados permanecen como None.
-    
-    Ejemplo de uso:
-        >>> norm = Normalizador(tipo=Norm_Global(), metodo=MaxNorm())
-        >>> img_norm = norm(img_5d, canal=0)
+        Clase para gestionar los diferentes tipos de normalización en imágenes confocales y aplicar 
+        diferentes métodos de normalización.
+        
+        Nota: 
+            - img_normalizada[i] corresponde al canal i original, con forma (T, Z, 1, Y, X). 
+            - Los canales no procesados permanecen como None.
+        
+        Ejemplo de uso:
+            >>> norm = Normalizador(tipo=Norm_Global(), metodo=MaxNorm())
+            >>> img_norm = norm(img_5d, canal=0)
     """
     nombre = "normalizador"
     
@@ -53,9 +57,9 @@ class Normalizador:
         metodo: MetodoNormalizacion = MaxNorm()
     ):
         """
-        Args:
-            tipo: Estrategia de normalización (Global, por Z, por T)
-            metodo: Algoritmo de normalización (MaxNorm, MinMaxNorm, etc.)
+            Args:
+                tipo: Estrategia de normalización (Global, por Z, por T)
+                metodo: Algoritmo de normalización (MaxNorm, MinMaxNorm, etc.)
         """
         self.tipo = tipo
         self.metodo = metodo 
@@ -69,20 +73,20 @@ class Normalizador:
         t_ref: int = 0,
     ) -> np.ndarray:
         """
-        Normaliza un canal independientemente según el tipo y método especificado.
-        Cada fluoróforo tiene su propia intensidad máxima, por lo que se normaliza canal por canal.
+            Normaliza un canal independientemente según el tipo y método especificado.
+            Cada fluoróforo tiene su propia intensidad máxima, por lo que se normaliza canal por canal.
 
-        Argumentos:
-            img_5d: Array 5D con forma [T, Z, C, Y, X]
-            canal: Índice del canal a normalizar (default: 0)
-            z_ref: Z-stack de referencia (no usado en esta versión) (default: 0)
-            t_ref: Timelapse de referencia (no usado en esta versión) (default: 0)
+            Argumentos:
+                img_5d: Array 5D con forma [T, Z, C, Y, X]
+                canal: Índice del canal a normalizar (default: 0)
+                z_ref: Z-stack de referencia (no usado en esta versión) (default: 0)
+                t_ref: Timelapse de referencia (no usado en esta versión) (default: 0)
 
-        Retorno:
-            Array 5D normalizado [T, Z, 1, Y, X] del canal
+            Retorno:
+                Array 5D normalizado [T, Z, 1, Y, X] del canal
 
-        Complejidad:
-            O(T*Z*Y*X) en el peor caso
+            Complejidad:
+                O(T*Z*Y*X) en el peor caso
         """
         if img_5d.ndim != 5:
             raise ValueError(f"img_5d debe ser 5D [T, Z, C, Y, X], tiene {img_5d.ndim} dimensiones")
