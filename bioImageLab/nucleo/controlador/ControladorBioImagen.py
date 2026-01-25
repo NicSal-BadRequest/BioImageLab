@@ -17,51 +17,56 @@ class ImagenEstandar:
 class BioImagen:
     ruta: Path
 
-# Tipo inmutables para manejar formas de normalizacion
-
 TipoOrigen = Union[ImagenEstandar, BioImagen]
 
-# Normaliza a todas las imagenes de un canal por el maximo encontrado en algun corte
+# Tipos inmutables para manejar formas de normalización
+
+# Normaliza todas las imágenes de un canal por el máximo encontrado en todo el canal
 @dataclass(frozen=True) 
 class Norm_Global:
-  pass
+    pass
 
-# Normaliza a todos los cortes Z de un cana dado la referencia pasada especifica o corte especifico
+# Normaliza todos los cortes Z de un canal dado por la referencia de un z_stack específico
 @dataclass(frozen=True) 
 class Z_Norm_Global:
-  z_stack: int
+    z_stack: int
 
-# Normaliza cada corte Z segun su propio maximo interno en dicho corte
+# Normaliza cada corte Z según su propio máximo interno en dicho corte
 @dataclass(frozen=True)
 class Z_Norm_PorCorte:
-  pass
+    pass
 
-# Normaliza cada fotograma segun uno pasado por referencia o fotograma especifico.
+# Normaliza cada fotograma según uno pasado por referencia (fotograma específico)
 @dataclass(frozen=True)
 class T_Norm_Global:
-  imelapse: int
+    timelapse: int  # FIX: era 'imelapse'
 
-# Normaliza cada fotograma segun su propio maximo en dicho fotograma
-# El maximo de un fotograma afecta a todos los cortes Z, es un como un global para los Z y canales de dicho fotograma.
+# Normaliza cada fotograma según su propio máximo en dicho fotograma
+# El máximo de un fotograma afecta a todos los cortes Z
 @dataclass(frozen=True)
 class T_Norm_PorCorte:
-  pass
+    pass
 
-# Clase Handler central para la decodificacion y normalizacion
+ModoNormalizacion = Union[Norm_Global, Z_Norm_Global, Z_Norm_PorCorte, T_Norm_Global, T_Norm_PorCorte]
+
 
 class ControladorBioImagen:
     """
-    Clase "Handler" para leer y preprocesar imagenes de microscopía en formato .png, .jpg, .tiff y formatos de bioimagen confocal como .ics/.ids.
+    Clase "Handler" para leer y preprocesar imágenes de microscopía en formato .png, .jpg, .tiff y formatos de bioimagen confocal como .ics/.ids.
     Permite :
       - Leer y abrir este tipo de archivos.
       - Preprocesarlos a escala de grises y transformarlos en un MultiArray para "handlear" los diferentes tipos de canales, "z-stacking" y "time-lapse" según el tipo de imagen.
-      - Normalizacion
+      - Normalización con diferentes modos
+      - Permite transformar las imágenes MultiArray 5D en una estructura indexeable para los 
+      tratamientos de operaciones atómicas (formato de solo Y, X) y luego reestructurarlo en 5D.
     Nota :
       - El MultiArray es [T, Z, C, Y, X] donde T es el "timelapse", Z el "Z-stacking" (diferentes planos en el eje Z), C es el Canal de fluorescencia ("Azul", "Rojo", "Verde" y "Campo" que puede
       ser claro u oscuro), y los ejes de pixeles X e Y son las dimensiones de la imagen.
-      - Una imagen bidimensional seria (1, 1, 1, Y, X), por ejemplo, de formatos .jpg y .png.
+      - Una imagen bidimensional sería (1, 1, 1, Y, X), por ejemplo, de formatos .jpg y .png.
       - img_normalizada[i] corresponde al canal i original, con forma (T, Z, 1, Y, X). Los canales no procesados
-       permanecen como None. Lo mismo ocurre para img_binaria[i].
+       permanecen como None. Lo mismo ocurre para img_procesada.
+      - Se usa .copy() en getters y el iterador dado que sino permitiria la sobreescritura en algo que deberia
+      ser solo lectura.
     """
 
     def __init__(self, ruta_imagen):
@@ -73,14 +78,13 @@ class ControladorBioImagen:
         self.canales: List[str] = []
         self.forma: Tuple[int, ...] = ()
 
-        # Version del MultiArray post-procesamiento :
-        self.img_normalizada: Optional[List[np.ndarray]] = None #Que sea un array donde contenga cada canal normalizado si se quiere.
-        self.img_binaria: Optional[List[np.ndarray]] = None # Idem de lo anterior
-
+        # Versión del MultiArray post-procesamiento
+        self.img_normalizada: Optional[List[Optional[np.ndarray]]] = None
+        self.img_procesada: Optional[np.ndarray] = None
 
     def _clasificar_imagen(self, ruta: Path) -> TipoOrigen:
         """
-          Determina el tipo de origen basado en la extensión (Fábrica).
+        Determina el tipo de origen basado en la extensión (Fábrica).
         """
         formatos_bio = {".ids", ".ics", ".tiff", ".tif"}
         if ruta.suffix.lower() in formatos_bio:
@@ -89,7 +93,7 @@ class ControladorBioImagen:
 
     def leer_bioImagen(self) -> Optional[np.ndarray]:
         """
-          Selector de modos estricto para cargar y normalizar a 5D.
+        Selector de modos estricto para cargar y normalizar a 5D.
         """
         try:
             match self.configuracion:
@@ -105,11 +109,13 @@ class ControladorBioImagen:
 
                     # Normalización a 16-bit y expansión a 5D: [T, Z, C, Y, X]
                     img_raw = img_raw.astype(np.uint16) * 256
-                    self.img = img_raw[np.newaxis, np.newaxis, np.newaxis, :, :] # Agregar los datos faltantes de las primeras componentes
+                    self.img = img_raw[np.newaxis, np.newaxis, np.newaxis, :, :]
                     self.canales = ["Gris"]
 
             if self.img is not None:
                 self.forma = self.img.shape
+                # Inicializar img_procesada con la misma forma
+                self.img_procesada = np.zeros_like(self.img)
             return self.img
 
         except Exception as e:
@@ -118,113 +124,260 @@ class ControladorBioImagen:
 
     def normalizar_bioImagen(self,
                              canal: int = 0,
-                             z_ref : int = 0,
+                             z_ref: int = 0,
                              t_ref: int = 0,
                              modo: ModoNormalizacion = Norm_Global()
                              ) -> Optional[np.ndarray]:
         """
-        Normaliza cada canal independientemente al rango [0, 1] dividiendo por su valor máximo.
+        Normaliza un canal independientemente al rango [0, 1] según el modo especificado.
         Cada fluoróforo tiene su propia intensidad máxima, por lo que se normaliza canal por canal.
 
+        Argumentos:
+            canal: Índice del canal a normalizar (default: 0)
+            z_ref: Z-stack de referencia para Z_Norm_Global (default: 0)
+            t_ref: Timelapse de referencia para T_Norm_Global (default: 0)
+            modo: Modo de normalización (default: Norm_Global())
+
         Retorno:
-            Array 5D normalizado [T, Z, C, Y, X] o None si hay error
-        Coste:
-            O(T*Z*Y*X)
+            Array 5D normalizado [T, Z, 1, Y, X] del canal o None si hay error
+
+        Complejidad:
+            O(T*Z*Y*X) en el peor caso
         """
         if self.img is None:
-            print("Error: Primero debes cargar la imagen con leer_bioImagen()")
-            return None
+            raise ValueError("Imagen no cargada. Ejecuta leer_bioImagen() primero")
+
+        T, Z, C, Y, X = self.forma
+        
+        if not (0 <= canal < C):
+            raise IndexError(f"Canal {canal} fuera de rango. Canales disponibles: 0-{C-1}")
+        if not (0 <= t_ref < T):
+            raise IndexError(f"t_ref={t_ref} fuera de rango. T max: {T-1}")
+        if not (0 <= z_ref < Z):
+            raise IndexError(f"z_ref={z_ref} fuera de rango. Z max: {Z-1}")
 
         try:
-            T, Z, C, Y, X = self.img.shape
-
-            # Verificar que el canal existe
-            if canal >= C or canal < 0:
-                print(f"Error: Canal {canal} no existe. Canales disponibles: 0-{C-1}")
-                print(f"Nombres de canales: {self.canales}")
-                return None
-
-            if t_ref >= T or z_ref >= Z:
-                print(f"Error: Índices fuera de rango. T max: {T-1}, Z max: {Z-1}")
-                return None
-
             # Convertir a float para evitar pérdida de precisión
             img_float = self.img.astype(np.float64)
 
             # Inicializar lista de arrays normalizados si no existe
             if self.img_normalizada is None:
-                # Lista de C elementos, cada uno es un array 5D inicializado en ceros
-                self.img_normalizada = [np.zeros((T, Z, 1, Y, X), dtype=np.float64) for _ in range(C)]
+                self.img_normalizada = [None for _ in range(C)]
+
+            # Inicializar el canal específico si no existe
+            if self.img_normalizada[canal] is None:
+                self.img_normalizada[canal] = np.zeros((T, Z, 1, Y, X), dtype=np.float64) # Si no probar float32 segun que haga openCV
 
             match modo:
                 case Norm_Global():
-                  # Extraer datos del canal a normalizar
-                  canal_data = img_float[:, :, canal, :, :]
-                  canal_max = canal_data.max()
+                    # Extraer datos del canal a normalizar
+                    canal_data = img_float[:, :, canal, :, :]
+                    canal_max = canal_data.max()
 
-                  if canal_max == 0:
-                    print(f"Advertencia: Canal {canal} ({self.canales[canal]}) tiene valor máximo 0")
-                    # Guardar el canal sin normalizar en la posición de la lista
-                    self.img_normalizada[canal][:, :, 0, :, :] = canal_data
-                  else:
-                    # Normalizar el canal y guardarlo
-                    self.img_normalizada[canal][:, :, 0, :, :] = canal_data / canal_max
-                    print(f"Canal {canal} ({self.canales[canal]}): max={canal_max:.2f}, normalizado a [0, 1]")
+                    if canal_max == 0:
+                        print(f"Advertencia: Canal {canal} ({self.canales[canal]}) tiene valor máximo 0")
+                        self.img_normalizada[canal][:, :, 0, :, :] = canal_data
+                    else:
+                        self.img_normalizada[canal][:, :, 0, :, :] = canal_data / canal_max
+                        print(f"Canal {canal} ({self.canales[canal]}): max={canal_max:.2f}, normalizado a [0, 1]")
 
-                case Z_Norm_Global():
-                  # Extraer los datos del z_stack de interes por el que se normalizara todo el canal:
-                  canal_data = img_float[:, z_ref, canal, :, :]
-                  z_ref_max = canal_data.max()
-                  if z_ref_max == 0:
-                    print(f"Advertencia: Z-stack {z_ref} ({self.canales[canal]}) tiene valor máximo 0")
-                    self.img_normalizada[canal][:, :, 0, :, :] = canal_data
-                  else:
-                    self.img_normalizada[canal][:, :, 0, :, :] = canal_data / z_ref_max
-                    print(f"Z-stack {z_ref} ({self.canales[canal]}): max={z_ref:.2f}, normalizado a [0, 1]")
+                case Z_Norm_Global(z_stack=z_ref_modo):
+                    # Usar z_ref del modo si está disponible, sino usar parámetro
+                    z_use = z_ref_modo if z_ref_modo is not None else z_ref
+
+                    # Extraer datos del z_stack de referencia
+                    canal_data = img_float[:, :, canal, :, :]
+                    z_ref_data = img_float[:, z_use, canal, :, :]
+                    z_ref_max = z_ref_data.max()
+                    
+                    if z_ref_max == 0:
+                        print(f"Advertencia: Z-stack {z_use} del canal {canal} tiene valor máximo 0")
+                        self.img_normalizada[canal][:, :, 0, :, :] = canal_data
+                    else:
+                        # Normalizar TODO el canal por el max del z_stack de referencia
+                        self.img_normalizada[canal][:, :, 0, :, :] = canal_data / z_ref_max
+                        print(f"Canal {canal} normalizado por Z-stack {z_use}: max={z_ref_max:.2f}")
 
                 case Z_Norm_PorCorte():
-                  # Extraer los datos de todos los cortes Z del canal y normalizar por corte segun maximo interno:
-                  for z in range(Z):
-                    canal_data = img_float[:, z, canal, :, :]
-                    z_max = canal_data.max()
-                    if z_max == 0:
-                      print(f"Advertencia: Z-stack {z} ({self.canales[canal]}) tiene valor máximo 0")
-                      self.img_normalizada[canal][:, z, 0, :, :] = canal_data
-                    else:
-                      self.img_normalizada[canal][:, z, 0, :, :] = canal_data / z_max
-                      print(f"Z-stack {z} ({self.canales[canal]}): max={z_max:.2f}, normalizado a [0, 1]")
+                    # Normalizar cada corte Z independientemente
+                    for z in range(Z):
+                        canal_data = img_float[:, z, canal, :, :]
+                        z_max = canal_data.max()
+                        if z_max == 0:
+                            print(f"Advertencia: Z-stack {z} del canal {canal} tiene valor máximo 0")
+                            self.img_normalizada[canal][:, z, 0, :, :] = canal_data
+                        else:
+                            self.img_normalizada[canal][:, z, 0, :, :] = canal_data / z_max
 
-                case T_Norm_Global():
-                  # Extraer los datos de todos los cortes por un canal dado en todos su fotogramas para normalizar por
-                  # aquel fotograma con mayor maximo pasado por parametro.
-                  canal_data = img_float[t_ref, :, canal, :, :]
-                  t_ref_max = canal_data.max()
-                  if t_ref_max == 0:
-                    print(f"Advertencia: Fotograma {t_ref} ({self.canales[canal]}) tiene valor máximo 0")
-                    self.img_normalizada[canal][t_ref, :, 0, :, :] = canal_data
-                  else:
-                    self.img_normalizada[canal][t_ref, :, 0, :, :] = canal_data / t_ref_max
-                    print(f"Fotograma {t_ref} ({self.canales[canal]}): max={t_ref_max:.2f}, normalizado a [0, 1]")
+                case T_Norm_Global(timelapse=t_ref_modo):
+                    # Usar t_ref del modo si está disponible, sino usar parámetro
+                    t_use = t_ref_modo if t_ref_modo is not None else t_ref
+                    # Extraer datos del fotograma de referencia
+                    canal_data = img_float[:, :, canal, :, :]
+                    t_ref_data = img_float[t_use, :, canal, :, :]
+                    t_ref_max = t_ref_data.max()
+                    
+                    if t_ref_max == 0:
+                        print(f"Advertencia: Fotograma {t_use} del canal {canal} tiene valor máximo 0")
+                        self.img_normalizada[canal][:, :, 0, :, :] = canal_data
+                    else:
+                        # Normalizar TODO el canal por el max del fotograma de referencia
+                        self.img_normalizada[canal][:, :, 0, :, :] = canal_data / t_ref_max
+                        print(f"Canal {canal} normalizado por fotograma {t_use}: max={t_ref_max:.2f}")
 
                 case T_Norm_PorCorte():
-                  # Extraer los datos de todos los cortes por un canal dado en todos su fotogramas para normalizar
-                  # por el maximo encontrado en cada fotograma.
-                  for t in range(T):
-                    canal_data = img_float[t, :, canal, :, :]
-                    t_max = canal_data.max()
-                    if t_max == 0:
-                      print(f"Advertencia: Fotograma {t} ({self.canales[canal]}) tiene valor máximo 0")
-                      self.img_normalizada[canal][t, :, 0, :, :] = canal_data
-                    else:
-                      self.img_normalizada[canal][t, :, 0, :, :] = canal_data / t_max
-                      print(f"Fotograma {t} ({self.canales[canal]}): max={t_max:.2f}, normalizado a [0, 1]")
+                    # Normalizar cada fotograma independientemente
+                    for t in range(T):
+                        canal_data = img_float[t, :, canal, :, :]
+                        t_max = canal_data.max()
+                        if t_max == 0:
+                            print(f"Advertencia: Fotograma {t} del canal {canal} tiene valor máximo 0")
+                            self.img_normalizada[canal][t, :, 0, :, :] = canal_data
+                        else:
+                            self.img_normalizada[canal][t, :, 0, :, :] = canal_data / t_max
 
             return self.img_normalizada[canal]
 
         except Exception as e:
             print(f"Error al normalizar la imagen: {e}")
+            import traceback
+            traceback.print_exc()
             return None
+    
+    def iterar_cortes(self, canal: int = 0):
+        """
+        Iterador para poder buscar o iterar en un canal dado por tiempo y por z-stack, 
+        obteniendo imágenes bidimensionales para su procesamiento.
 
+        Argumentos:
+            canal: Canal a iterar (default: 0)
+
+        Yields:
+            Tupla (t, z, img_2d) donde img_2d es np.ndarray de forma (Y, X)
+
+        Complejidad:
+            O(T*Z) iteraciones
+        """
+        if self.img is None:
+            raise ValueError("Imagen no cargada")
+
+        T, Z, C, _, _ = self.forma
+        
+        if not (0 <= canal < C):
+            raise IndexError(f"Canal {canal} fuera de rango. Canales disponibles: 0-{C-1}")
+
+        for t in range(T):
+            for z in range(Z):
+                yield t, z, self.img[t, z, canal].copy()
+
+    def set_corte_procesado(self,
+                            canal: int = 0,
+                            t: int = 0,
+                            z: int = 0,
+                            img_2d: Optional[np.ndarray] = None):
+        """
+        Método setter para guardar una imagen 2D procesada en la estructura tensor 5D.
+        
+        Argumentos:
+            canal: Índice del canal (default: 0)
+            t: Índice del timelapse (default: 0)
+            z: Índice del z-stack (default: 0)
+            img_2d: Objeto np.ndarray a settear (si None, crea array de ceros)
+
+        Complejidad:
+            O(1)
+        """
+        if self.img_procesada is None:
+            raise ValueError("img_procesada no inicializada")
+
+        T, Z, C, Y, X = self.forma
+        
+        if not (0 <= t < T and 0 <= z < Z and 0 <= canal < C):
+            raise IndexError(f"Índices fuera de rango. T max: {T-1}, Z max: {Z-1}, C max: {C-1}")
+
+        if img_2d is None:
+            img_2d = np.zeros((Y, X), dtype=self.img.dtype)
+
+        assert img_2d.ndim == 2, "img_2d debe ser 2D con forma (Y, X)"
+        assert img_2d.shape == (Y, X), f"img_2d debe tener forma ({Y}, {X}), tiene {img_2d.shape}"
+        
+        self.img_procesada[t, z, canal] = img_2d
+    
+    def _get_corte(self, 
+                   img: np.ndarray, 
+                   canal: int,
+                   t: int,
+                   z: int) -> np.ndarray:
+        """
+        Función interna para realizar cortes en alguna estructura imagen 5D.
+        
+        Argumentos:
+            img: Array 5D [T, Z, C, Y, X]
+            canal: Índice del canal
+            t: Índice del timelapse
+            z: Índice del z-stack
+
+        Retorna:
+            Array 2D [Y, X]
+
+        Complejidad:
+            O(1) - solo indexación y copia
+        """
+        T, Z, C, _, _ = img.shape
+        
+        if not (0 <= t < T and 0 <= z < Z and 0 <= canal < C):
+            raise IndexError(f"Índices fuera de rango. T max: {T-1}, Z max: {Z-1}, C max: {C-1}")
+        
+        return img[t, z, canal].copy()
+
+    def get_corte_original(self,
+                           canal: int = 0,
+                           t: int = 0,
+                           z: int = 0) -> np.ndarray:
+        """
+        Método getter para obtener un corte de la estructura tensor 5D original.
+        
+        Argumentos:
+            canal: Índice del canal (default: 0)
+            t: Índice del timelapse (default: 0)
+            z: Índice del z-stack (default: 0)
+
+        Retorna:
+            Imagen 2D np.ndarray de forma (Y, X)
+
+        Complejidad:
+            O(1)
+        """
+        if self.img is None:
+            raise ValueError("Imagen original no cargada")
+
+        return self._get_corte(self.img, canal, t, z)
+
+    def get_corte_procesado(self,
+                            canal: int = 0,
+                            t: int = 0,
+                            z: int = 0) -> np.ndarray:
+        """
+        Método getter para obtener un corte de la estructura tensor 5D procesada.
+        
+        Argumentos:
+            canal: Índice del canal (default: 0)
+            t: Índice del timelapse (default: 0)
+            z: Índice del z-stack (default: 0)
+
+        Retorna:
+            Imagen 2D np.ndarray de forma (Y, X)
+
+        Complejidad:
+            O(1)
+        """
+        if self.img_procesada is None:
+            raise ValueError("No se ha hecho ninguna operación de procesamiento")
+
+        return self._get_corte(self.img_procesada, canal, t, z)
+
+
+    '''
     def binarizar_bioImagen(self, umbral: float = 0.5, canal: int = 0) -> Optional[np.ndarray]:
         """
         Binariza un canal específico de la imagen normalizada según un umbral.
@@ -247,39 +400,39 @@ class ControladorBioImagen:
             T, Z, _, Y, X = self.img_normalizada[canal].shape
             C = len(self.canales)
 
-            # Verificar que el canal existe
+            Verificar que el canal existe
             if canal >= C or canal < 0:
                 print(f"Error: Canal {canal} no existe. Canales disponibles: 0-{C-1}")
                 print(f"Nombres de canales: {self.canales}")
                 return None
 
-            # Inicializar lista de arrays binarios si no existe
+            Inicializar lista de arrays binarios si no existe
             if self.img_binaria is None:
                 self.img_binaria = [np.zeros((T, Z, 1, Y, X), dtype=np.uint8) for _ in range(C)]
 
-            # Binarizar cada timeframe y z-stack del canal seleccionado
+            Binarizar cada timeframe y z-stack del canal seleccionado
 
             """
-            # Forma menos eficiente.
+            Forma menos eficiente.
             for t in range(T):
                 for z in range(Z):
-                    # Extraer el corte 2D del canal
+                    Extraer el corte 2D del canal
                     corte_2d = self.img_normalizada[canal][t, z, 0, :, :]
 
-                    # Aplicar umbral (operación vectorizada)
+                    Aplicar umbral (operación vectorizada)
                     corte_binario = np.zeros_like(corte_2d, dtype=np.uint8)
                     corte_binario[corte_2d > umbral] = 1
                     corte_binario[corte_2d <= umbral] = 0
 
-                    # Guardar en el array binarizado (escalar a 0-255)
+                    Guardar en el array binarizado (escalar a 0-255)
                     self.img_binaria[canal][t, z, 0, :, :] = (corte_binario * 255).astype(np.uint8)
             """
 
-            # Binarización vectorizada - Todo el array de una vez : Se ejecuta todo en C por Numpy.
-            # Aplicar umbral a todo el tensor [T, Z, 1, Y, X]
+            Binarización vectorizada - Todo el array de una vez : Se ejecuta todo en C por Numpy.
+            Aplicar umbral a todo el tensor [T, Z, 1, Y, X]
             corte_binario = (self.img_normalizada[canal] > umbral).astype(np.uint8)
 
-            # Escalar a 0-255 (vectorizado)
+            Escalar a 0-255 (vectorizado)
             self.img_binaria[canal] = (corte_binario * 255).astype(np.uint8)
 
             return self.img_binaria[canal]
@@ -287,6 +440,8 @@ class ControladorBioImagen:
         except Exception as e:
             print(f"Error al binarizar la imagen: {e}")
             return None
+
+    '''
 
     def plot_bioImagen_jn(self, canal: int = 0, z_stack: int = 0, timelapse: int = 0, fluoroforo: str = None):
         """
@@ -311,7 +466,7 @@ class ControladorBioImagen:
             return None
 
         try:
-            T, Z, C, Y, X = self.img.shape
+            T, Z, C, Y, X = self.forma
 
             # Validación de índices
             if canal >= C or canal < 0:
