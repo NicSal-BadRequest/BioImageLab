@@ -148,10 +148,10 @@ class ControladorBioImagen:
         self.img_procesada[t, z, canal] = img_2d
     
     def _get_corte(self, 
-                   img: np.ndarray, 
-                   canal: int,
-                   t: int,
-                   z: int) -> np.ndarray:
+                img: np.ndarray, 
+                canal: int,
+                t: int,
+                z: int) -> np.ndarray:
         """
         Función interna para realizar cortes en alguna estructura imagen 5D.
         
@@ -175,9 +175,9 @@ class ControladorBioImagen:
         return img[t, z, canal].copy()
 
     def get_corte_original(self,
-                           canal: int = 0,
-                           t: int = 0,
-                           z: int = 0) -> np.ndarray:
+                        canal: int = 0,
+                        t: int = 0,
+                        z: int = 0) -> np.ndarray:
         """
         Método getter para obtener un corte de la estructura tensor 5D original.
         
