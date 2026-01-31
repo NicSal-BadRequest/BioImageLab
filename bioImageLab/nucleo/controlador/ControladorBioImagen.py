@@ -310,7 +310,7 @@ class ControladorBioImagen:
             if es_retro:
                 titulo_0 = f">> {fluoroforo.upper()}_SIGNAL"
                 axes[0].set_title(titulo_0, color=accent_color, fontsize=12,
-                                 loc='left', pad=15, fontfamily='monospace')
+                                loc='left', pad=15, fontfamily='monospace')
                 axes[0].grid(color=accent_color, linestyle=':', alpha=0.3)
                 for spine in axes[0].spines.values():
                     spine.set_color(accent_color)
@@ -321,7 +321,7 @@ class ControladorBioImagen:
                 axes[0].set_title(titulo_0, color=accent_color, fontsize=12, pad=15)
                 axes[0].axis('off')
                 plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04,
-                           label='Intensidad')
+                        label='Intensidad')
 
             # --- PLOT 2: IMAGEN BINARIA (si existe) ---
             if tiene_binaria:
