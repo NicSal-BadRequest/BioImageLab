@@ -13,7 +13,7 @@
 
 import numpy as np
 import cv2
-from ...filtradores.operadoresIluminacion.rollingBall import RollingBall
+from ...realzadores.operadoresMorfologicos.rolling_ball import RollingBall
 
 class CorreccionFondo:
     nombre = "correccion_fondo"

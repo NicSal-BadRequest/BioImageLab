@@ -109,6 +109,7 @@ nucleo/
 │   │
 │   ├── morfologia/
 │   │   ├── apertura.py
+│   │   ├── rolling_ball.py
 │   │   ├── cierre.py
 │   │   ├── top_hat.py
 │   │   └── bottom_hat.py
