@@ -1,6 +1,6 @@
 import numpy as np 
 
-# Metodos para normalizar
+# Funciones para normalizar
 # Se aceptan que esten en float32 o float64
 
 class MetodoNormalizacion:
