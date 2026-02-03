@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import warnings
 
 # Filtro gaussiano
 
@@ -45,7 +46,11 @@ class Gaussiano:
         nuevo_alto = alto if alto % 2 != 0 else alto + 1
 
         if nuevo_ancho != ancho or nuevo_alto != alto:
-            print(f"Nota: Máscara corregida de ({ancho}, {alto}) a ({nuevo_ancho}, {nuevo_alto}) para ser impar.")
+          warnings.warn(
+                f"Nota: Máscara corregida de ({ancho}, {alto})"
+                "a ({nuevo_ancho}, {nuevo_alto}) para ser impar.",
+                RuntimeWarning
+            )
             
         return (nuevo_ancho, nuevo_alto)
 

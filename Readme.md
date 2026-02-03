@@ -68,7 +68,7 @@ nucleo/
 │   │
 │   ├── corrector/
 │   │   ├── flat_field.py
-│   │   ├── background_estimation.py
+│   │   ├── correccion_fondo.py
 │   │   └── shading.py
 │   │
 │   ├── registrador/

@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import warnings
 
 # Filtro mediana
 
@@ -26,7 +27,10 @@ class Mediana:
         """
         self.mascara = mascara if mascara % 2 != 0 else mascara + 1
         if self.mascara != mascara:
-            print(f"Nota: Mediana corregida a {self.mascara}.")
+            warnings.warn(
+                f"Nota: Mediana corregida a {self.mascara}.",
+                RuntimeWarning
+            )
 
     def __call__(self, img : np.ndarray) -> np.ndarray:
         return cv2.medianBlur(img, self.mascara)
