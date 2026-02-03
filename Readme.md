@@ -63,20 +63,20 @@ nucleo/
 │
 ├── preprocesador/
 │   ├── normalizador/
-│   │   ├── normalizador.py
-│   │   └── metodosNormalizacion.py
+│   │   ├── normalizador.py # Handler de la normalizacion : por el metodo y por el corte confocal.
+│   │   └── metodosNormalizacion.py # Metodos zscore, max, mim_max, y por percentil.
 │   │
-│   ├── correccion_iluminacion/
+│   ├── correctorIluminacion/
 │   │   ├── flat_field.py
 │   │   ├── background_estimation.py
 │   │   └── shading.py
 │   │
-│   ├── registro/
+│   ├── registrador/
 │   │   ├── rigid.py
 │   │   ├── affine.py
 │   │   └── elastic.py
 │   │
-│   └── reduccion_artefactos/
+│   └── correctorArtefactos/
 │       ├── hot_pixels.py
 │       └── bleaching.py
 │
@@ -97,7 +97,7 @@ nucleo/
 │   │   ├── log.py
 │   │   └── wavelets.py
 │
-├── 3_realce_transformaciones/
+├── realzador/
 │   ├── realce_bordes/
 │   │   ├── sobel.py
 │   │   ├── scharr.py
@@ -117,7 +117,7 @@ nucleo/
 │       ├── gradiente.py
 │       └── respuesta_filtros.py
 │
-├── 4_segmentacion/
+├── segmentador/
 │   ├── binarizacion/
 │   │   ├── umbral_global.py
 │   │   ├── otsu.py
@@ -137,7 +137,7 @@ nucleo/
 │       ├── connected_components.py
 │       └── label_image.py
 │
-├── 5_extraccion_objetos/
+├── extractor/
 │   ├── contornos/
 │   │   ├── find_contours.py
 │   │   └── hull.py
@@ -152,7 +152,7 @@ nucleo/
 │       ├── vecinos.py
 │       └── colocalizacion.py
 │
-├── 6_cuantificacion/
+├── cuantificador/
 │   ├── intensidad/
 │   │   ├── media.py
 │   │   ├── integrada.py
@@ -172,7 +172,7 @@ nucleo/
 │       ├── distribuciones.py
 │       └── correlaciones.py
 │
-├── 7_analisis_visualizacion/
+├── analizador/
 │   ├── plots/
 │   │   ├── histogramas.py
 │   │   ├── scatter.py
@@ -187,8 +187,8 @@ nucleo/
 │       ├── parquet.py
 │       └── figures.py
 │
-└── pipelines/
-    ├── clasicos/
+└── gestorLab/
+    ├── pipelinesClasicos/
     │   ├── nuclei_fluorescence.yaml
     │   └── spots_detection.yaml
     │
