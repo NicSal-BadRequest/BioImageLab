@@ -66,7 +66,7 @@ nucleo/
 │   │   ├── normalizador.py
 │   │   └── metodosNormalizacion.py
 │   │
-│   ├── correccion_iluminacion/
+│   ├── corrector/
 │   │   ├── flat_field.py
 │   │   ├── background_estimation.py
 │   │   └── shading.py

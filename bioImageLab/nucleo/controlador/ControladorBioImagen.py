@@ -48,6 +48,10 @@ class ControladorBioImagen:
         # Versión del MultiArray post-procesamiento
         self.img_procesada: Optional[np.ndarray] = None
 
+    def __bool__(self) -> bool:
+        # Metodo para indicar si o no está cargada la imagen.
+        return self.img is not None
+
     def _clasificar_imagen(self, ruta: Path) -> TipoOrigen:
         """
         Determina el tipo de origen basado en la extensión (Fábrica).
@@ -88,6 +92,27 @@ class ControladorBioImagen:
             print(f"Error al leer la imagen: {e}")
             return None
     
+
+    def __iter__(self):
+        """
+        Iterador para poder buscar o iterar para todos los canales por tiempo y por z-stack, 
+        obteniendo imágenes bidimensionales para su procesamiento.
+
+        Yields:
+            canal, t, z, Tupla (t, z, img_2d) donde img_2d es np.ndarray de forma (Y, X)
+
+        Complejidad:
+            O(T*Z*C) iteraciones
+        """
+
+        if self.img is None:
+            return iter(())
+        T, Z, C, _, _ = self.forma
+        for canal in range(C):
+            for t in range(T):
+                for z in range(Z):
+                    yield canal, t, z, self.img[t, z, canal].copy()
+
     def iterar_cortes(self, canal: int = 0):
         """
         Iterador para poder buscar o iterar en un canal dado por tiempo y por z-stack, 
@@ -219,6 +244,63 @@ class ControladorBioImagen:
             raise ValueError("No se ha hecho ninguna operación de procesamiento")
 
         return self._get_corte(self.img_procesada, canal, t, z)
+
+
+    def __eq__(self, other) -> bool:
+        """
+            Metodo para comparar dos controladores por tura y por forma. 
+            Retorna : Bool
+            Complejida : O(1)
+        """
+
+        if not isinstance(other, ControladorBioImagen):
+            return False
+
+        return (
+            self.ruta_imagen == other.ruta_imagen and
+            self.forma == other.forma
+        )
+
+
+    def __len__(self) -> int:
+        """
+            Metodo para determinar la cantidad de fotos totales existentes.
+            Retorna : Int
+            Complejida : O(1)
+        """
+
+        if self.img is None:
+            return 0
+        T, Z, *_ = self.forma
+
+        return T * Z
+
+    # Metodos para I/O externo : Abrir imagenes, liberar memoria y cachear los bioformatos.
+    def __enter__(self):
+        self.leer_bioImagen()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.img = None
+        self.img_procesada = None
+
+    def __repr__(self) -> str:
+        """
+            Metodo para debugging.
+            Retorna : String
+            Complejidad : O(1)
+        """
+        if self.img is None:
+            return f"<ControladorBioImagen ruta='{self.ruta_imagen}' (no cargada)>"
+
+        T, Z, C, Y, X = self.forma
+
+        return (
+            f"<ControladorBioImagen "
+            f"ruta='{self.ruta_imagen.name}', "
+            f"forma=(T={T}, Z={Z}, C={C}, Y={Y}, X={X}), "
+            f"canales={self.canales}>"
+        )
 
     def plot_bioImagen_jn(self, canal: int = 0, z_stack: int = 0, timelapse: int = 0, fluoroforo: str = None):
         """
