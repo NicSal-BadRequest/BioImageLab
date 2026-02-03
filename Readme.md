@@ -69,6 +69,8 @@ nucleo/
 │   ├── corrector/
 │   │   ├── flat_field.py
 │   │   ├── correccion_fondo.py
+│   │   ├── hot_pixels.py
+│       └── bleaching.py
 │   │   └── shading.py
 │   │
 │   ├── registrador/
@@ -77,8 +79,7 @@ nucleo/
 │   │   └── elastic.py
 │   │
 │   └── correctorArtefactos/
-│       ├── hot_pixels.py
-│       └── bleaching.py
+│       
 │
 ├── filtradores/
 │   ├── operadores_locales/                 # dominio espacial
