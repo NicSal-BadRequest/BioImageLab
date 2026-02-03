@@ -66,7 +66,7 @@ nucleo/
 │   │   ├── normalizador.py # Handler de la normalizacion : por el metodo y por el corte confocal.
 │   │   └── metodosNormalizacion.py # Metodos zscore, max, mim_max, y por percentil.
 │   │
-│   ├── correctorIluminacion/
+│   ├── corrector/
 │   │   ├── flat_field.py
 │   │   ├── background_estimation.py
 │   │   └── shading.py
