@@ -19,7 +19,7 @@ class RollingBall:
 
     def _chequear_radio(self, radio) -> int: 
         """
-          Verifica que el radio, no sea menor a 1.
+            Verifica que el radio, no sea menor a 1.
         """
 
         if radio < 3:

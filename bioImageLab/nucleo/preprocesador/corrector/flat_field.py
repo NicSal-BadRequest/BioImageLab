@@ -15,7 +15,7 @@
 
 import numpy as np
 import cv2
-from ...filtradores.operadoresLocales.gaussiano import Gaussiano
+from ...filtradores.locales.gaussiano import Gaussiano
 
 class FlatField:
     nombre = "base_flat_field"

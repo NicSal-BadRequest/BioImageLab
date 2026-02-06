@@ -71,7 +71,7 @@ nucleo/
 │   │   ├── correccion_fondo.py
 │   │   ├── hot_pixels.py
 │       └── bleaching.py
-│   │   └── shading.py
+│   │   └── sombreado.py
 │   │
 │   ├── registrador/
 │   │   ├── rigid.py
@@ -81,24 +81,24 @@ nucleo/
 │   └── correctorArtefactos/
 │       
 │
-├── filtradores/
-│   ├── operadores_locales/                 # dominio espacial
+├── filtradores/                            # Su misión es la REDUCCIÓN (Ruido/Fondo)
+│   ├── locales/                 # dominio espacial
 │   │   ├── gaussiano.py
 │   │   ├── mediana.py
 │   │   ├── cajaBlur.py
 │   │   └── bilateral.py
 │   │
-│   ├── operadores_espectrales/              # dominio frecuencial
+│   ├── espectrales/              # dominio frecuencial
 │   │   ├── fft_pasabajo.py
 │   │   ├── fft_pasaalto.py
 │   │   └── fft_pasabanda.py
 │   │
-│   ├── espacio_escala/                      # multiescala
+│   ├── multiescala/                      # multiescala
 │   │   ├── dog.py
 │   │   ├── log.py
 │   │   └── wavelets.py
 │
-├── realzador/
+├── realzador/                              # Su misión es la EXPLICITACIÓN (Bordes/Detalle)
 │   ├── realce_bordes/
 │   │   ├── sobel.py
 │   │   ├── scharr.py
