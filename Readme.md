@@ -66,78 +66,105 @@ nucleo/
 │   │   ├── normalizador.py # Handler de la normalizacion : por el metodo y por el corte confocal.
 │   │   └── metodosNormalizacion.py # Metodos zscore, max, mim_max, y por percentil.
 │   │
-│   ├── corrector/
-│   │   ├── flat_field.py
-│   │   ├── correccion_fondo.py
-│   │   ├── hot_pixels.py
-│       └── bleaching.py
-│   │   └── sombreado.py
-│   │
-│   ├── registrador/
-│   │   ├── rigid.py
-│   │   ├── affine.py
-│   │   └── elastic.py
-│   │
-│   └── correctorArtefactos/
-│       
+│   └──  corrector/ # Cada uno con dos metodos : el real con imagenes de referencia, y el estimado (usando filtros, realzadores o modelado).
+│          ├── iluminacion/
+│          │    ├── flat_field.py 
+│          │    ├── correccion_fondo.py 
+│          │    ├── hot_pixels.py # Esto es mas una correccion de artefactos sencilla sin modelado.
+│          │    └── sombreado.py 
+│          └── deformaciones/ # Correciones mas complejas usando transformaciones y modelado rigido, afin y elastico. Utilizan modelado.
+│              ├── afin.py
+│              ├── rigida.py
+│              └── elastica.py
 │
-├── filtradores/                            # Su misión es la REDUCCIÓN (Ruido/Fondo)
+│
+├── filtrador/                 # Su misión es la REDUCCIÓN (Ruido/Fondo)
 │   ├── locales/                 # dominio espacial
 │   │   ├── gaussiano.py
 │   │   ├── mediana.py
+│   │   ├── difusionAnisotropica.py
 │   │   ├── cajaBlur.py
 │   │   └── bilateral.py
 │   │
 │   ├── espectrales/              # dominio frecuencial
 │   │   ├── fft_pasabajo.py
 │   │   ├── fft_pasaalto.py
+│   │   ├── fft_pasabanda.py
+│   │   ├── filtradoNotch.py
 │   │   └── fft_pasabanda.py
 │   │
 │   ├── multiescala/                      # multiescala
-│   │   ├── dog.py
-│   │   ├── log.py
+│   │   ├── diferenciaGaussiana.py
+│   │   ├── diferenciaLaplaciana.py
+│   │   ├── piramedesLaplacianas.py
 │   │   └── wavelets.py
+│   │
+│   ├── noLocales/                          # No locales
+│          └── nlm.py                          # Non-local medians
+│
 │
 ├── realzador/                              # Su misión es la EXPLICITACIÓN (Bordes/Detalle)
-│   ├── realce_bordes/
-│   │   ├── sobel.py
-│   │   ├── scharr.py
-│   │   └── canny.py
 │   │
-│   ├── realce_contraste/
+│   ├── contraste/
 │   │   ├── clahe.py
+│   │   ├── gamma.py
+│   │   ├── log.py
+│   │   ├── retinex.py
 │   │   └── hist_eq.py
 │   │
-│   ├── morfologia/
-│   │   ├── apertura.py
-│   │   ├── rolling_ball.py
-│   │   ├── cierre.py
-│   │   ├── top_hat.py
-│   │   └── bottom_hat.py
+│   ├── deconvolucion/
+│   │   ├── wiener.py
 │   │
-│   └── mapas_caracteristicas/
-│       ├── gradiente.py
-│       └── respuesta_filtros.py
+│   ├── morfologicos/
+│   │   ├── apertura.py
+│   │   ├── cierre.py
+│   │   ├── rolling_ball.py
+│   │   ├── top_hat.py
+│   │   ├── bottom_hat.py
+│   │   └── gradienteMorfologico.py
+│   │
+│   ├── afilacion/
+│   │   ├── afilacionLaplaciana.py
+│   │   ├── filtroHighBoost.py
+│   │   └── mascaraEnforque.py
+│   │
+│   └── gradientes/
+│       ├── hessiano.py
+│       ├── laplaciano.py
+│       ├── canny.py
+│       ├── sobel.py
+│       └── scharr.py
 │
 ├── segmentador/
 │   ├── binarizacion/
-│   │   ├── umbral_global.py
-│   │   ├── otsu.py
-│   │   ├── adaptativo.py
-│   │   └── percentil.py
+│   │   ├── metodosBinarizacion.py # otsu, global, adaptativo, percentil
+│   │   └── binarizador.py
 │   │
-│   ├── separacion_instancias/
+│   ├── instancial/
 │   │   ├── watershed.py
-│   │   ├── marcadores.py
-│   │   └── distancia.py
+│   │   ├── marcado.py # watershedMarcado
+│   │   └── splitDistancial.py
 │   │
-│   ├── segmentacion_regiones/
+│   ├── regional/
 │   │   ├── region_growing.py
-│   │   └── superpixeles.py
+│   │   ├── random_walk.py
+│   │   └── superpixel.py
 │   │
 │   └── etiquetado/
 │       ├── connected_components.py
-│       └── label_image.py
+│       └── reetiquetado.py
+│
+├── transformador/              # Rotaciones, escalado, Warp manual  
+│   ├── afin.py
+│   ├── rigida.py
+│   ├── elastica.py             
+│
+├── modelador/                 
+│   ├── clustering/                 
+│   │   ├── pca.py
+│   │
+│   ├── ajuste/              
+│   │   ├── ajuste_superficie.py
 │
 ├── extractor/
 │   ├── contornos/
