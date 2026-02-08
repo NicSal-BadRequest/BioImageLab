@@ -151,7 +151,6 @@ nucleo/
 │   ├── estructura/                     # Vesselness filters : Son realzadores que no buscan bordes, sino "tubos" (neuritas, vasos, filamentos de actina).
 │   │   ├── hessiano.py
 │   │   ├── frangi.py
-│   │   ├── frangi.py
 │   │   ├── sato.py
 │   │   └── tensor_estructura.py
 │   │ 
@@ -192,6 +191,8 @@ nucleo/
 │   │   ├── redimensionar.py        # Resize
 │   │   ├── rotacion.py            
 │   │   └── remuestreo.py  
+│   │
+│   │
 │   └── matematico/        
 │        ├── transformacion_distancia.py
 │        ├── esqueletizacion.py
