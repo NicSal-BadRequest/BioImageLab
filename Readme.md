@@ -70,6 +70,7 @@ nucleo/
 │          ├── iluminacion/
 │          │    ├── flat_field.py 
 │          │    ├── correccion_fondo.py 
+│          │    ├── rolling_ball.py 
 │          │    └── sombreado.py 
 │          │ 
 │          ├── artefactos/
@@ -147,7 +148,7 @@ nucleo/
 │   │   ├── filtroHighBoost.py
 │   │   └── mascaraEnforque.py
 │   │
-│   ├── estructura/
+│   ├── estructura/                     # Vesselness filters : Son realzadores que no buscan bordes, sino "tubos" (neuritas, vasos, filamentos de actina).
 │   │   ├── hessiano.py
 │   │   ├── frangi.py
 │   │   ├── frangi.py
@@ -155,7 +156,6 @@ nucleo/
 │   │   └── tensor_estructura.py
 │   │ 
 │   └── gradientes/
-│       ├── hessiano.py
 │       ├── laplaciano.py
 │       ├── canny.py
 │       ├── sobel.py
