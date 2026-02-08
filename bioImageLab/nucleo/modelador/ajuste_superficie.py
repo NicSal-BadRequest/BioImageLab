@@ -2,15 +2,15 @@ import numpy as np
 from itertools import combinations_with_replacement
 
 
-class SurfaceFit:
+class AjusteSuperficie:
     """
-    Estimador de fondo mediante ajuste polinómico 2D.
+        Estimador de fondo mediante ajuste polinómico 2D.
 
-    Ajusta una superficie polinómica de grado arbitrario
-    a una imagen usando mínimos cuadrados.
+        Ajusta una superficie polinómica de grado arbitrario
+        a una imagen usando mínimos cuadrados.
     """
 
-    nombre = "surface_fit"
+    nombre = "ajuste_superficie"
 
     def __init__(self, grado: int = 2):
         if grado < 0:

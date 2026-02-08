@@ -35,7 +35,6 @@ class T_Norm_PorCorte:
 
 TipoNormalizacion = Union[Norm_Global, Z_Norm_PorCorte, T_Norm_PorCorte]
 
-
 class Normalizador:
     """
         Clase para gestionar los diferentes tipos de normalización en imágenes confocales y aplicar 
