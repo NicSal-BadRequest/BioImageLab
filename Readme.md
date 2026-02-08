@@ -63,47 +63,58 @@ nucleo/
 │
 ├── preprocesador/
 │   ├── normalizador/
-│   │   ├── normalizador.py # Handler de la normalizacion : por el metodo y por el corte confocal.
-│   │   └── metodosNormalizacion.py # Metodos zscore, max, mim_max, y por percentil.
+│   │   ├── normalizador.py               # Handler de la normalizacion : por el metodo y por el corte confocal.
+│   │   └── metodosNormalizacion.py       # Metodos zscore, max, mim_max, y por percentil.
 │   │
-│   └──  corrector/ # Cada uno con dos metodos : el real con imagenes de referencia, y el estimado (usando filtros, realzadores o modelado).
+│   └── corrector/                        # Cada uno con dos metodos : el real con imagenes de referencia, y el estimado (usando filtros, realzadores o modelado).
 │          ├── iluminacion/
 │          │    ├── flat_field.py 
 │          │    ├── correccion_fondo.py 
-│          │    ├── hot_pixels.py # Esto es mas una correccion de artefactos sencilla sin modelado.
 │          │    └── sombreado.py 
-│          └── deformaciones/ # Correciones mas complejas usando transformaciones y modelado rigido, afin y elastico. Utilizan modelado.
+│          │ 
+│          ├── artefactos/
+│          │    ├── dead_pixels.py 
+│          │    ├── hot_pixels.py         # Esto es mas una correccion de artefactos sencilla sin modelado.
+│          │    └── striping.py 
+│          │ 
+│          └── deformaciones/             # Correciones mas complejas usando transformaciones y modelado rigido, afin y elastico. Utilizan modelado.
 │              ├── afin.py
 │              ├── rigida.py
-│              └── elastica.py
+│              ├── elastica.py
+│              ├── demons.py
+│              └── b_splines.py
 │
 │
-├── filtrador/                 # Su misión es la REDUCCIÓN (Ruido/Fondo)
-│   ├── locales/                 # dominio espacial
+├── filtrador/                            # Su misión es la REDUCCIÓN (Ruido/Fondo)
+│   ├── locales/                          # Dominio espacial
 │   │   ├── gaussiano.py
 │   │   ├── mediana.py
 │   │   ├── difusionAnisotropica.py
 │   │   ├── cajaBlur.py
 │   │   └── bilateral.py
 │   │
-│   ├── espectrales/              # dominio frecuencial
+│   ├── espectrales/                      # Dominio frecuencial
 │   │   ├── fft_pasabajo.py
 │   │   ├── fft_pasaalto.py
 │   │   ├── fft_pasabanda.py
-│   │   ├── filtradoNotch.py
-│   │   └── fft_pasabanda.py
+│   │   ├── fft_bandstop.py
+│   │   └── filtradoNotch.py
 │   │
-│   ├── multiescala/                      # multiescala
+│   ├── multiescala/                      # Dominio Multiescala
 │   │   ├── diferenciaGaussiana.py
 │   │   ├── diferenciaLaplaciana.py
 │   │   ├── piramedesLaplacianas.py
 │   │   └── wavelets.py
 │   │
-│   ├── noLocales/                          # No locales
-│          └── nlm.py                          # Non-local medians
+│   ├── variacionales/                    
+│   │   └── total_variacion.py
+│   │
+│   └── noLocales/                        # Dominio No local
+│        ├── bm3d.py
+│        └── nlm.py                       # Non-local medians
 │
 │
-├── realzador/                              # Su misión es la EXPLICITACIÓN (Bordes/Detalle)
+├── realzador/                            # Su misión es la EXPLICITACIÓN (Bordes/Detalle)
 │   │
 │   ├── contraste/
 │   │   ├── clahe.py
@@ -112,15 +123,23 @@ nucleo/
 │   │   ├── retinex.py
 │   │   └── hist_eq.py
 │   │
+│   ├── convolucion/
+│   │   ├── kernel_personalizado.py
+│   │   └── psf_simulacion.py
+│   │
+│   │
 │   ├── deconvolucion/
 │   │   ├── wiener.py
+│   │   ├── richardson_lucy.py
+│   │   ├── blind_deconvolucion.py
+│   │   └── tikhonov.py
 │   │
 │   ├── morfologicos/
 │   │   ├── apertura.py
 │   │   ├── cierre.py
-│   │   ├── rolling_ball.py
 │   │   ├── top_hat.py
 │   │   ├── bottom_hat.py
+│   │   ├── reconstruccion_morfologica.py
 │   │   └── gradienteMorfologico.py
 │   │
 │   ├── afilacion/
@@ -128,6 +147,13 @@ nucleo/
 │   │   ├── filtroHighBoost.py
 │   │   └── mascaraEnforque.py
 │   │
+│   ├── estructura/
+│   │   ├── hessiano.py
+│   │   ├── frangi.py
+│   │   ├── frangi.py
+│   │   ├── sato.py
+│   │   └── tensor_estructura.py
+│   │ 
 │   └── gradientes/
 │       ├── hessiano.py
 │       ├── laplaciano.py
@@ -137,45 +163,83 @@ nucleo/
 │
 ├── segmentador/
 │   ├── binarizacion/
-│   │   ├── metodosBinarizacion.py # otsu, global, adaptativo, percentil
+│   │   ├── metodosBinarizacion.py      # otsu, global, adaptativo, percentil
 │   │   └── binarizador.py
 │   │
 │   ├── instancial/
 │   │   ├── watershed.py
-│   │   ├── marcado.py # watershedMarcado
+│   │   ├── marcado.py                  # watershedMarcado
+│   │   ├── distancia_watersher.py
 │   │   └── splitDistancial.py
 │   │
 │   ├── regional/
 │   │   ├── region_growing.py
 │   │   ├── random_walk.py
+│   │   ├── corte_grafico.py
 │   │   └── superpixel.py
+│   │
+│   ├── contornos_activos/
+│   │   ├── serpientes.py
+│   │   └── conjuntos_nivel.py
 │   │
 │   └── etiquetado/
 │       ├── connected_components.py
 │       └── reetiquetado.py
 │
-├── transformador/              # Rotaciones, escalado, Warp manual  
-│   ├── afin.py
-│   ├── rigida.py
-│   ├── elastica.py             
+├── transformador/                  # Rotaciones, escalado, Warp manual  
+│   ├── geometrico/
+│   │   ├── deformar.py             # Warp
+│   │   ├── redimensionar.py        # Resize
+│   │   ├── rotacion.py            
+│   │   └── remuestreo.py  
+│   └── matematico/        
+│        ├── transformacion_distancia.py
+│        ├── esqueletizacion.py
+│        ├── eje_medial.py            
+│        ├── radon.py
+│        ├── fourier.py            
+│        └── tranformacion_wavelet.py      
 │
 ├── modelador/                 
-│   ├── clustering/                 
+│   ├── dimensionalidad/                 
 │   │   ├── pca.py
+│   │   ├── umap.py
+│   │   └── tsne.py
 │   │
-│   ├── ajuste/              
-│   │   ├── ajuste_superficie.py
+│   ├── clustering/              
+│   │   ├── kmeans.py
+│   │   └── dbscan.py
+│   │
+│   ├── clasificacion/  
+│   │   ├── svm.py
+│   │   └── random_forest.py
+│   │
+│   ├── tracking/  
+│   │   └── multi_objeto.py
+│   │
+│   └── ajuste/  
+│       ├── ajuste_superficie.py
+│       └── ajuste_psf.py
 │
 ├── extractor/
 │   ├── contornos/
-│   │   ├── find_contours.py
+│   │   ├── encontrar_contornos.py
 │   │   └── hull.py
 │   │
 │   ├── geometria/
 │   │   ├── centroides.py
-│   │   ├── bounding_box.py
+│   │   ├── caja_frontera.py
 │   │   ├── area.py
 │   │   └── diametro.py
+│   │
+│   ├── textura/
+│   │   ├── glcm.py
+│   │   ├── haralick.py
+│   │   └── lbp.py
+│   │
+│   ├── topologia/
+│   │   ├── metricas_esqueleticas.py
+│   │   └── branching.py
 │   │
 │   └── relaciones_espaciales/
 │       ├── vecinos.py
@@ -191,11 +255,13 @@ nucleo/
 │   ├── morfometria/
 │   │   ├── area.py
 │   │   ├── perimetro.py
+│   │   ├── dimension_fractal.py
 │   │   └── circularidad.py
 │   │
 │   ├── dinamica_temporal/
-│   │   ├── time_series.py
-│   │   └── bleaching_curve.py
+│   │   ├── serie_temporales.py
+│   │   ├── tracking.py
+│   │   └── curva_bleaching.py
 │   │
 │   └── estadisticas_objetos/
 │       ├── distribuciones.py
